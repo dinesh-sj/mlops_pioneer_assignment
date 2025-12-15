@@ -11,27 +11,29 @@ The implementation prioritizes:
 
 ---
 
+
 ## 📌 Project Overview
 
-**Business Problem**  
+**Business Problem**
 Predict the nightly **price** of an Airbnb listing in NYC (regression).
 
 **Primary Metrics**
-- RMSE
-- MAE
-- R²
+
+* RMSE
+* MAE
+* R²
 
 **Key Design Principles**
-- Avoid unstable IDs and free-text
-- Favor robust, numeric, production-safe features
-- Explicit tradeoff between accuracy and deployability
+
+* Avoid unstable IDs and free-text
+* Favor robust, numeric, production-safe features
+* Explicit tradeoff between accuracy and deployability
 
 ---
 
 ## 🧱 Project Structure
 
 ```
-
 .
 ├── data/
 │   └── AB_NYC_2019.csv
@@ -39,22 +41,25 @@ Predict the nightly **price** of an Airbnb listing in NYC (regression).
 │   ├── model.pkl
 │   └── model_meta.json
 ├── app.py                  # FastAPI inference service
+├── Dockerfile              # Containerized FastAPI deployment
 ├── bentoml_service.py      # Optional BentoML service
 ├── nyc_airbnb_flow.py      # Metaflow pipeline
 ├── requirements.txt
 ├── README.md
 └── notebook.ipynb          # End-to-end MLOps walkthrough
-
-````
+```
 
 ---
 
 ## ⚙️ Setup
 
-### 1️⃣ Install Dependencies
+### 1️⃣ Install Dependencies (Local)
+
 ```bash
 pip install -r requirements.txt
-````
+```
+
+---
 
 ### 2️⃣ Dataset
 
@@ -79,7 +84,7 @@ data/AB_NYC_2019.csv
 ### **Stage 2 — Data Engineering**
 
 * Drop invalid prices (`price <= 0`)
-* Fill missing `reviews_per_month` with 0
+* Fill missing `reviews_per_month` with `0`
 * Enforce numeric schema
 * Optional dataset versioning with **DVC**
 
@@ -102,22 +107,21 @@ data/AB_NYC_2019.csv
 * `OrdinalEncoder` for categorical features
 * Numeric passthrough
 * `HistGradientBoostingRegressor`
-* `TransformedTargetRegressor` for log-target handling
+* `TransformedTargetRegressor` (log-target)
 
 **Why this setup**
 
-* Dense numeric inputs → faster & better generalization
-* Log-target stabilizes skewed price distribution
-* Encoding and model choice are deployment-friendly
+* Dense numeric inputs → fast & stable
+* Log-target reduces skew
+* Fully deployment-safe preprocessing
 
-**Hyperparameter Tuning**
+**Tuning**
 
 * `RandomizedSearchCV`
 * 3-fold CV
 * Optimizes **R²**
-* Confirms chosen configuration is near-optimal
 
-Typical tuned performance:
+Typical performance:
 
 ```
 RMSE ≈ 105–115
@@ -129,31 +133,61 @@ R²   ≈ 0.30–0.35
 
 ### **Stage 5 — Evaluation**
 
-* Final evaluation on holdout test set
-* Sanity checks ensure non-degenerate predictions
+* Final test-set evaluation
+* Sanity checks for non-degenerate predictions
 
 ---
 
 ### **Stage 6 — Model Packaging**
 
-Artifacts saved:
+Saved artifacts:
 
 * `models/model.pkl` — full preprocessing + model pipeline
-* `models/model_meta.json` — metadata & metrics
+* `models/model_meta.json` — metrics & metadata
 
-The saved model directly returns **price in original units**.
+The model returns **price in original units**.
 
 ---
 
-### **Stage 7 — Deployment**
+## 🚀 Stage 7 — Deployment
 
-#### FastAPI
+### 🔹 FastAPI (Local)
 
 ```bash
 uvicorn app:app --reload
 ```
 
-#### BentoML (optional)
+Health check:
+
+```bash
+curl http://localhost:8000/health
+```
+
+---
+
+### 🔹 FastAPI with Docker (Production-Ready)
+
+#### Build image
+
+```bash
+docker build -t nyc-airbnb-price-api .
+```
+
+#### Run container
+
+```bash
+docker run -p 8000:8000 nyc-airbnb-price-api
+```
+
+The API will be available at:
+
+```
+http://localhost:8000
+```
+
+---
+
+### 🔹 BentoML (Optional)
 
 ```bash
 bentoml serve bentoml_service:svc --reload
@@ -161,12 +195,12 @@ bentoml serve bentoml_service:svc --reload
 
 ---
 
-### **Stage 8 — Monitoring (Evidently)**
+## 📈 Stage 8 — Monitoring (Evidently)
 
 * Data drift detection
 * Reference: training data
 * Current: simulated production data
-* Output:
+* Output artifact:
 
 ```
 drift_report.html
@@ -174,19 +208,19 @@ drift_report.html
 
 ---
 
-### **Stage 9 — Continuous Retraining Trigger**
+## 🔁 Stage 9 — Continuous Retraining Trigger
 
-A simple rule-based trigger:
+Rule-based retraining trigger:
 
-```text
+```
 If share_drifted_features > 0.30 → retrain
 ```
 
-This logic can be automated via:
+Can be automated via:
 
 * Cron
 * Airflow
-* CI/CD pipeline
+* CI/CD pipelines
 
 ---
 
@@ -198,7 +232,7 @@ Run the full pipeline:
 python nyc_airbnb_flow.py run --data_path data/AB_NYC_2019.csv
 ```
 
-Inspect results:
+Inspect metrics:
 
 ```python
 from metaflow import Flow
@@ -210,22 +244,13 @@ run.data.metrics
 
 ## 🧠 Key Takeaways
 
-* Accuracy was intentionally balanced with **production robustness**
-* Hyperparameter tuning validates the final configuration
-* Log-target handling is fully encapsulated inside the pipeline
+* Accuracy balanced with **production robustness**
+* Hyperparameter tuning validates design choices
+* Log-target handling fully encapsulated
 * Model is:
 
   * Fast to train
   * Stable to deploy
   * Easy to monitor and retrain
-
----
-
-## ✅ Status
-
-✔ End-to-end
-✔ Assignment-ready
-✔ Interview-ready
-✔ Production-aligned
 
 ---
