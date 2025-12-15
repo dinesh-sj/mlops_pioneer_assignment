@@ -1,0 +1,11 @@
+numpy
+pandas
+bentoml
+mlflow
+metaflow
+matplotlib
+seaborn
+
+fastapi[standard]
+uvicorn[standard]
+scikit-learn
