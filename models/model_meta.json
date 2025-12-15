@@ -1,0 +1,19 @@
+{
+  "created_at": "2025-12-15T05:05:53.940405",
+  "target": "price",
+  "cat_features": [
+    "neighbourhood_group",
+    "room_type"
+  ],
+  "num_features": [
+    "latitude",
+    "longitude",
+    "minimum_nights",
+    "number_of_reviews",
+    "reviews_per_month",
+    "availability_365",
+    "calculated_host_listings_count"
+  ],
+  "rmse": 105.44041941774381,
+  "mae": 50.191551403637646
+}
